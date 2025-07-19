@@ -2,14 +2,15 @@ import json
 import os
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
-from easygrow_consumer.domain.entities import SensorData
-from easygrow_consumer.application.services import SensorService
+from easygrow_consumer.domain.entities import SensorData, BombaEvent
+from easygrow_consumer.application.services import SensorService, BombaService
 
 
 class MQTTClient:
-    def __init__(self, service: SensorService):
+    def __init__(self, sensor_service: SensorService, bomba_service: BombaService):
         load_dotenv()
-        self.service = service
+        self.sensor_service = sensor_service
+        self.bomba_service = bomba_service
 
         # Cargar variables
         self.host = os.getenv("MOSQUITTOHOST")
@@ -34,27 +35,58 @@ class MQTTClient:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             print("✅ Conectado a MQTT broker")
+            # Suscribirse a ambos tópicos
             self.client.subscribe("sensor/#")
+            self.client.subscribe("bomba/estado")
+            print("📡 Suscrito a tópicos: sensor/# y bomba/estado")
         else:
             print(f"❌ Error de conexión: código {rc}")
 
     def on_message(self, client, userdata, msg):
         try:
+            topic = msg.topic
             payload = json.loads(msg.payload.decode())
+            
+            if topic.startswith("sensor/"):
+                # Manejo de datos de sensores (YL-69, DHT22, etc.)
+                self._handle_sensor_message(payload)
+            elif topic == "bomba/estado":
+                # Manejo de eventos de bomba
+                self._handle_bomba_message(payload)
+            else:
+                print(f"⚠️ Tópico no reconocido: {topic}")
 
-            required_keys = ["mac_address", "valor", "nombre"]
-            if not all(k in payload for k in required_keys):
-                raise ValueError("❌ JSON incompleto. Se esperaba mac_address, valor y nombre.")
-
-            data = SensorData(
-                mac_address=payload["mac_address"],
-                nombre=payload["nombre"],
-                valor=payload["valor"]
-            )
-            self.service.handle_sensor_data(data)
-            print(f"📦 Dato procesado: {data}")
         except Exception as e:
-            print(f"❌ Error al procesar mensaje: {e}")
+            print(f"❌ Error al procesar mensaje en tópico {msg.topic}: {e}")
+
+    def _handle_sensor_message(self, payload):
+        """Maneja mensajes de sensores regulares"""
+        required_keys = ["mac_address", "valor", "nombre"]
+        if not all(k in payload for k in required_keys):
+            raise ValueError("❌ JSON incompleto para sensor. Se esperaba mac_address, valor y nombre.")
+
+        data = SensorData(
+            mac_address=payload["mac_address"],
+            nombre=payload["nombre"],
+            valor=payload["valor"]
+        )
+        self.sensor_service.handle_sensor_data(data)
+        print(f"📦 Dato de sensor procesado: {data}")
+
+    def _handle_bomba_message(self, payload):
+        """Maneja mensajes de eventos de bomba"""
+        required_keys = ["mac_address", "evento", "valor_humedad"]
+        if not all(k in payload for k in required_keys):
+            raise ValueError("❌ JSON incompleto para bomba. Se esperaba mac_address, evento y valor_humedad.")
+
+        event = BombaEvent(
+            mac_address=payload["mac_address"],
+            evento=payload["evento"],
+            valor_humedad=payload["valor_humedad"],
+            tiempo_encendida_seg=payload.get("tiempo_encendida_seg")  # Opcional
+        )
+        self.bomba_service.handle_bomba_event(event)
+        print(f"🔧 Evento de bomba procesado: {event}")
 
     def start(self):
         self.client.loop_forever()
