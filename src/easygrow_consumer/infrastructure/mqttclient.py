@@ -75,7 +75,7 @@ class MQTTClient:
 
     def _handle_bomba_message(self, payload):
         """Maneja mensajes de eventos de bomba"""
-        required_keys = ["mac_address", "evento", "valor_humedad"]
+        required_keys = ["mac_address", "evento", "valor_humedad","id_sensor"]
         if not all(k in payload for k in required_keys):
             raise ValueError("❌ JSON incompleto para bomba. Se esperaba mac_address, evento y valor_humedad.")
 

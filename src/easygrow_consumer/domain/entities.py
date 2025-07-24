@@ -12,6 +12,7 @@ class SensorData:
 class BombaEvent:
     mac_address: str
     evento: str
+    id_sensor: int
     valor_humedad: float
     tiempo_encendida_seg: Optional[int] = None
     fecha: datetime = datetime.now()

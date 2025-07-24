@@ -54,56 +54,21 @@ class PostgresRepository(SensorDataRepository, BombaRepository):
         
         with self.conn.cursor() as cur:
             try:
-                # Buscar específicamente el sensor YL-69 por tipo_sensor
+                # Ya no buscamos el id_sensor, lo usamos directamente
                 cur.execute(
                     """
-                    SELECT s.id_sensor, s.tipo_sensor, s.descripcion
-                    FROM sensores s
-                    JOIN dispositivos d ON s.id_dispositivo = d.id_dispositivo
-                    WHERE s.tipo_sensor = 'YL-69' AND d.mac_address = %s
+                    INSERT INTO activaciones_bombas (id_sensor, mac_address, fecha, duracion_segundos)
+                    VALUES (%s, %s, %s, %s)
                     """,
-                    (event.mac_address,)
+                    (event.id_sensor, event.mac_address, event.fecha, event.tiempo_encendida_seg)
                 )
+                print(f"✅ Activación guardada - Sensor ID: {event.id_sensor}, Duración: {event.tiempo_encendida_seg}s")
 
-                sensor_row = cur.fetchone()
-                
-                if sensor_row:
-                    id_sensor, tipo_sensor, descripcion = sensor_row
-                    print(f"🔍 Sensor YL-69 encontrado - ID: {id_sensor}, Tipo: {tipo_sensor}, Desc: {descripcion}")
-                    
-                    # Insertar la activación
-                    cur.execute(
-                        """
-                        INSERT INTO activaciones_bombas (id_sensor, mac_address, fecha, duracion_segundos)
-                        VALUES (%s, %s, %s, %s)
-                        """,
-                        (id_sensor, event.mac_address, event.fecha, event.tiempo_encendida_seg)
-                    )
-                    print(f"✅ Activación guardada - Sensor ID: {id_sensor}, Duración: {event.tiempo_encendida_seg}s")
-                    
-                    # Verificar que se guardó
-                    cur.execute("SELECT COUNT(*) FROM activaciones_bombas WHERE id_sensor = %s", (id_sensor,))
-                    count = cur.fetchone()[0]
-                    print(f"📊 Total activaciones para sensor {id_sensor}: {count}")
-                    
-                else:
-                    print(f"⚠️ No se encontró sensor YL-69 para MAC '{event.mac_address}'")
-                    
-                    # Mostrar todos los sensores disponibles
-                    cur.execute(
-                        """
-                        SELECT s.id_sensor, s.tipo_sensor, s.descripcion
-                        FROM sensores s
-                        JOIN dispositivos d ON s.id_dispositivo = d.id_dispositivo
-                        WHERE d.mac_address = %s
-                        """,
-                        (event.mac_address,)
-                    )
-                    all_sensors = cur.fetchall()
-                    print(f"💡 Sensores disponibles para MAC {event.mac_address}:")
-                    for sensor in all_sensors:
-                        print(f"   - ID: {sensor[0]}, Tipo: {sensor[1]}, Desc: {sensor[2]}")
-                    
+                # Verificar que se guardó
+                cur.execute("SELECT COUNT(*) FROM activaciones_bombas WHERE id_sensor = %s", (event.id_sensor,))
+                count = cur.fetchone()[0]
+                print(f"📊 Total activaciones para sensor {event.id_sensor}: {count}")
+
             except Exception as e:
                 print(f"❌ Error al guardar activación de bomba: {e}")
                 import traceback
