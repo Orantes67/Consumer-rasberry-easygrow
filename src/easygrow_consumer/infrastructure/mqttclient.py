@@ -77,14 +77,15 @@ class MQTTClient:
         """Maneja mensajes de eventos de bomba"""
         required_keys = ["mac_address", "evento", "valor_humedad","id_sensor"]
         if not all(k in payload for k in required_keys):
-            raise ValueError("❌ JSON incompleto para bomba. Se esperaba mac_address, evento y valor_humedad.")
+            raise ValueError("❌ JSON incompleto para bomba. Se esperaba mac_address, evento, valor_humedad e id_sensor.")
 
         event = BombaEvent(
-            mac_address=payload["mac_address"],
-            evento=payload["evento"],
-            valor_humedad=payload["valor_humedad"],
-            tiempo_encendida_seg=payload.get("tiempo_encendida_seg")  # Opcional
-        )
+        mac_address=payload["mac_address"],
+        evento=payload["evento"],
+        id_sensor=payload["id_sensor"],  # ← Este parámetro faltaba
+        valor_humedad=payload["valor_humedad"],
+        tiempo_encendida_seg=payload.get("tiempo_encendida_seg")  # Opcional
+ )
         self.bomba_service.handle_bomba_event(event)
         print(f"🔧 Evento de bomba procesado: {event}")
 
