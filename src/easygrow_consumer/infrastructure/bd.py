@@ -1,8 +1,9 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
-from easygrow_consumer.domain.repository import SensorDataRepository, BombaRepository
-from easygrow_consumer.domain.entities import SensorData, BombaEvent
+from src.easygrow_consumer.domain.repository import SensorDataRepository, BombaRepository
+from src.easygrow_consumer.domain.entities import SensorData, BombaEvent
+
 
 class PostgresRepository(SensorDataRepository, BombaRepository):
     def __init__(self):

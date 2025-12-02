@@ -1,5 +1,5 @@
-from easygrow_consumer.domain.entities import SensorData, BombaEvent
-from easygrow_consumer.domain.repository import SensorDataRepository, BombaRepository, MessageQueuePublisher
+from src.easygrow_consumer.domain.entities import SensorData, BombaEvent
+from src.easygrow_consumer.domain.repository import SensorDataRepository, BombaRepository, MessageQueuePublisher
 
 class SensorService:
     def __init__(self, repository: SensorDataRepository, publisher: MessageQueuePublisher):

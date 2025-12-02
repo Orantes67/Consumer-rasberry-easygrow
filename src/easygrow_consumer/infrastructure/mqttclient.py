@@ -2,8 +2,8 @@ import json
 import os
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
-from easygrow_consumer.domain.entities import SensorData, BombaEvent
-from easygrow_consumer.application.services import SensorService, BombaService
+from src.easygrow_consumer.domain.entities import SensorData, BombaEvent
+from src.easygrow_consumer.application.services import SensorService, BombaService
 
 
 class MQTTClient:
