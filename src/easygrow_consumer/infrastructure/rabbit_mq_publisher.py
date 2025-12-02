@@ -41,7 +41,7 @@ class RabbitMQPublisher(MessageQueuePublisher):
 
     def publish(self, data) -> None:
         # Definir la MAC address fija que siempre se va a publicar
-        FIXED_MAC_ADDRESS = "D8:3A:DD:1A:5C:B6"
+        FIXED_MAC_ADDRESS = "d8:3a:dd:1a:5c:b5"
 
         try:
             if isinstance(data, SensorData):
@@ -58,8 +58,15 @@ class RabbitMQPublisher(MessageQueuePublisher):
             # Sobrescribir la dirección MAC en la copia
             data_to_publish.mac_address = FIXED_MAC_ADDRESS
             
-            # Serializar el mensaje usando el objeto modificado
-            message = json.dumps(data_to_publish.__dict__, default=str)
+            # Serializar el mensaje con fecha en formato ISO completo (incluye microsegundos)
+            def serialize_datetime(obj):
+                # Importar datetime en la función para evitar conflicto de nombres
+                from datetime import datetime as dt
+                if isinstance(obj, dt):
+                    return obj.isoformat()  # Formato: "2025-12-02T10:31:45.126058"
+                return str(obj)
+            
+            message = json.dumps(data_to_publish.__dict__, default=serialize_datetime)
             
             # Verificar que la conexión y el canal estén abiertos
             if not hasattr(self, 'connection') or self.connection.is_closed:
